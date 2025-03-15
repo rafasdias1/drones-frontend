@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Zonas de Voo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+        }
+        .leaflet-popup-content {
+            margin: 0;
+            padding: 0.5rem;
+        }
+        .leaflet-popup-tip-container {
+            display: none;
+        }
+        .legend {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Inicializar o mapa
+    const map = L.map('map').setView([39.5, -8], 7);
+
+    // Adicionar camada de mapa base
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Função para obter estilo baseado no tipo de zona
+    function getAirspaceStyle(type) {
+        type = type.toLowerCase();
+
+        switch (type) {
+            case 'danger':
+            case 'prohibited':
+                return {
+                    fillColor: "#EF4444", // Vermelho
+                    weight: 2,
+                    opacity: 1,
+                    color: "white",
+                    dashArray: "3",
+                    fillOpacity: 0.7
+                };
+            case 'restricted':
+                return {
+                    fillColor: "#F59E0B", // Laranja
+                    weight: 2,
+                    opacity: 1,
+                    color: "white",
+                    dashArray: "3",
+                    fillOpacity: 0.7
+                };
+            case 'controlled':
+                return {
+                    fillColor: "#3B82F6", // Azul
+                    weight: 2,
+                    opacity: 1,
+                    color: "white",
+                    dashArray: "3",
+                    fillOpacity: 0.7
+                };
+            default:
+                return {
+                    fillColor: "#10B981", // Verde
+                    weight: 2,
+                    opacity: 1,
+                    color: "white",
+                    dashArray: "3",
+                    fillOpacity: 0.7
+                };
+        }
+    }
+
+    // Função para processar e validar coordenadas
+    function validateAndFixCoordinates(coordinates) {
+        if (!Array.isArray(coordinates)) return [];
+
+        // Se as coordenadas são um par de números, retorna como está
+        if (coordinates.length === 2 && typeof coordinates[0] === 'number' && typeof coordinates[1] === 'number') {
+            return coordinates;
+        }
+
+        // Se as coordenadas são um array de arrays, processa cada par
+        return coordinates.map(coord => {
+            if (Array.isArray(coord) && coord.length === 2) {
+                return [Number(coord[0]), Number(coord[1])];
+            }
+            return [0, 0]; // Coordenadas padrão em caso de erro
+        }).filter(coord => !isNaN(coord[0]) && !isNaN(coord[1]));
+    }
+
+    // Função para processar os dados GeoJSON
+    function processGeoJsonData(data) {
+        if (!data || !data.features) return { type: "FeatureCollection", features: [] };
+
+        return {
+            ...data,
+            features: data.features.map(feature => {
+                try {
+                    if (feature.geometry.type === "Polygon") {
+                        return {
+                            ...feature,
+                            geometry: {
+                                ...feature.geometry,
+                                coordinates: [validateAndFixCoordinates(feature.geometry.coordinates[0])]
+                            }
+                        };
+                    }
+                    if (feature.geometry.type === "LineString") {
+                        return {
+                            ...feature,
+                            geometry: {
+                                ...feature.geometry,
+                                coordinates: validateAndFixCoordinates(feature.geometry.coordinates)
+                            }
+                        };
+                    }
+                    return feature;
+                } catch (e) {
+                    console.error("Erro ao processar feature:", e);
+                    return null;
+                }
+            }).filter(feature => feature !== null)
+        };
+    }
+
+    // Adicionar dados GeoJSON ao mapa
+    function addGeoJsonToMap(data) {
+        try {
+            // Processar e validar os dados
+            const processedData = processGeoJsonData(data);
+
+            // Adicionar dados GeoJSON ao mapa
+            L.geoJSON(processedData, {
+                style: function(feature) {
+                    return getAirspaceStyle(feature.properties.type);
+                },
+                onEachFeature: function(feature, layer) {
+                    // Adicionar popup
+                    layer.bindPopup(`
+                        <div class="p-2">
+                            <h3 style="font-weight: bold; font-size: 1.125rem;">${feature.properties.name}</h3>
+                            <p style="font-size: 0.875rem;">Tipo: ${feature.properties.type}</p>
+                            <p style="font-size: 0.875rem;">País: ${feature.properties.country}</p>
+                        </div>
+                    `);
+
+                    // Adicionar evento de clique
+                    layer.on('click', function() {
+                        // Enviar mensagem para o componente pai
+                        window.parent.postMessage({
+                            type: 'FEATURE_CLICK',
+                            feature: feature
+                        }, '*');
+                    });
+                }
+            }).addTo(map);
+
+            // Adicionar legenda
+            const legend = L.control({position: 'bottomright'});
+            legend.onAdd = function() {
+                const div = L.DomUtil.create('div', 'legend');
+                div.innerHTML = `
+                    <h4 style="margin-top: 0; margin-bottom: 8px; font-weight: bold;">Legenda</h4>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #10B981;"></div>
+                        <span>Permitido</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #3B82F6;"></div>
+                        <span>Controlado</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #F59E0B;"></div>
+                        <span>Restrito</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #EF4444;"></div>
+                        <span>Proibido</span>
+                    </div>
+                `;
+                return div;
+            };
+            legend.addTo(map);
+
+            // Notificar o componente pai que o mapa foi carregado
+            window.parent.postMessage({
+                type: 'MAP_LOADED'
+            }, '*');
+        } catch (error) {
+            console.error("Erro ao processar dados GeoJSON:", error);
+            showError("Erro ao processar dados GeoJSON");
+        }
+    }
+
+    // Função para mostrar erro no mapa
+    function showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.style.position = 'absolute';
+        errorDiv.style.top = '50%';
+        errorDiv.style.left = '50%';
+        errorDiv.style.transform = 'translate(-50%, -50%)';
+        errorDiv.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+        errorDiv.style.padding = '20px';
+        errorDiv.style.borderRadius = '8px';
+        errorDiv.style.textAlign = 'center';
+        errorDiv.style.maxWidth = '80%';
+        errorDiv.innerHTML = `
+            <div style="color: #EF4444; font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; color: #EF4444;">Erro ao carregar o mapa</h3>
+            <p style="color: #4B5563; margin-bottom: 1rem;">${message}</p>
+            <button onclick="window.location.reload()" style="background-color: #EF4444; color: white; padding: 0.5rem 1rem; border-radius: 0.375rem; border: none; cursor: pointer;">
+                Tentar novamente
+            </button>
+        `;
+        document.body.appendChild(errorDiv);
+    }
+
+    // Ouvir mensagens do componente pai
+    window.addEventListener('message', function(event) {
+        if (event.data.type === 'GEOJSON_DATA') {
+            addGeoJsonToMap(event.data.data);
+        } else if (event.data.type === 'SET_CENTER') {
+            map.setView(event.data.center, event.data.zoom);
+        }
+    });
+
+    // Notificar o componente pai que o mapa está pronto para receber dados
+    window.parent.postMessage({
+        type: 'MAP_READY'
+    }, '*');
+
+// Buscar dados GeoJSON da API
+fetch('api/airspaces/geojson')
+  .then(response => {
+      console.log("Status da resposta:", response. status);
+      return response.text(); // Primeiro obter como texto para depuração
+  })
+  .then(text => {
+      console.log("Resposta como texto:", text.substring(0, 200) + "..."); // Mostrar os primeiros 200 caracteres
+
+      // Verificar se começa com <!doctype ou <html
+      if (text.toLowerCase().startsWith("<!doctype") || text.toLowerCase().startsWith("<html")) {
+          console.error("Recebeu HTML em vez de JSON. Verifique a URL da API.");
+          showError("Recebeu HTML em vez de JSON. Verifique a URL da API.");
+          return;
+      }
+
+      // Tentar converter para JSON
+      try {
+          const data = JSON.parse(text);
+          console.log("Dados GeoJSON recebidos:", data);
+
+          // Processar e validar os dados
+          const processedData = processGeoJsonData(data);
+
+          // Adicionar dados GeoJSON ao mapa
+          L.geoJSON(processedData, {
+              style: function(feature) {
+                  return getAirspaceStyle(feature.properties.type || 'default');
+              },
+              onEachFeature: function(feature, layer) {
+                  // Adicionar popup
+                  layer.bindPopup(`
+                      <div class="p-2">
+                          <h3 style="font-weight: bold; font-size: 1.125rem;">${feature.properties.name || 'Sem nome'}</h3>
+                          <p style="font-size: 0.875rem;">Tipo: ${feature.properties.type || 'Não especificado'}</p>
+                          <p style="font-size: 0.875rem;">País: ${feature.properties.country || 'Não especificado'}</p>
+                      </div>
+                  `);
+
+                  // Adicionar evento de clique
+                  layer.on('click', function() {
+                      // Enviar mensagem para o componente pai
+                      window.parent.postMessage({
+                          type: 'FEATURE_CLICK',
+                          feature: feature
+                      }, '*');
+                  });
+              }
+          }).addTo(map);
+
+          // Adicionar legenda
+          const legend = L.control({position: 'bottomright'});
+          legend.onAdd = function() {
+              const div = L.DomUtil.create('div', 'legend');
+              div.innerHTML = `
+                  <h4 style="margin-top: 0; margin-bottom: 8px; font-weight: bold;">Legenda</h4>
+                  <div class="legend-item">
+                      <div class="legend-color" style="background-color: #10B981;"></div>
+                      <span>Permitido</span>
+                  </div>
+                  <div class="legend-item">
+                      <div class="legend-color" style="background-color: #3B82F6;"></div>
+                      <span>Controlado</span>
+                  </div>
+                  <div class="legend-item">
+                      <div class="legend-color" style="background-color: #F59E0B;"></div>
+                      <span>Restrito</span>
+                  </div>
+                  <div class="legend-item">
+                      <div class="legend-color" style="background-color: #EF4444;"></div>
+                      <span>Proibido</span>
+                  </div>
+              `;
+              return div;
+          };
+          legend.addTo(map);
+
+          // Notificar o componente pai que o mapa foi carregado
+          window.parent.postMessage({
+              type: 'MAP_LOADED'
+          }, '*');
+      } catch (error) {
+          console.error("Erro ao analisar JSON:", error);
+          showError("Erro ao analisar JSON: " + error.message);
+      }
+  })
+  .catch(error => {
+      console.error("Erro ao buscar dados GeoJSON:", error);
+      showError("Erro ao buscar dados GeoJSON: " + error.message);
+  });
+</script>
+</body>
+</html>
+
