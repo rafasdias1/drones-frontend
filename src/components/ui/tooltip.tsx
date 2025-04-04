@@ -1,7 +1,7 @@
 // Vamos substituir o componente Tooltip baseado em Radix UI por uma implementação simples com React
 
 import React from "react"
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 
 interface TooltipProps {
   children: React.ReactNode
