@@ -60,6 +60,20 @@ interface ANACData {
   features: ANACZone[]
 }
 
+// Tipos para dados meteorológicos
+interface WeatherData {
+  temperature: number
+  windSpeed: number
+  windDirection: number
+  humidity: number
+  precipitationProbability: number
+  weatherCode: number
+  visibility: number
+  pressureSurfaceLevel: number
+  description: string
+  icon: string
+}
+
 // Definir tipos de zonas para facilitar a filtragem
 type ZoneType = "prohibited" | "req_authorisation" | "no_restriction"
 
@@ -163,6 +177,243 @@ const MapBaseControl = () => {
         </svg>
         Portugal
       </button>
+    </div>
+  )
+}
+
+// Componente para exibir informações meteorológicas
+const WeatherControl = ({ location }: { location: [number, number] | null }) => {
+  const [weather, setWeather] = useState<WeatherData | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState(false)
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      if (!location) return
+
+      setLoading(true)
+      setError(null)
+
+      try {
+        // API key do Tomorrow.io
+        const apiKey = "3P042HsZPo0XKcQ3lAdZAiE6i4mBu1cs"
+        const [lat, lon] = location
+
+        // Construir URL da API
+        const url = `https://api.tomorrow.io/v4/weather/realtime?location=${lat},${lon}&apikey=${apiKey}&units=metric`
+
+        const response = await fetch(url)
+
+        if (!response.ok) {
+          throw new Error(`Erro ao buscar dados meteorológicos: ${response.status}`)
+        }
+
+        const data = await response.json()
+
+        // Extrair dados relevantes
+        const values = data.data.values
+
+        // Mapear código do tempo para descrição e ícone
+        const weatherDescription = getWeatherDescription(values.weatherCode)
+        const weatherIcon = getWeatherIcon(values.weatherCode)
+
+        setWeather({
+          temperature: values.temperature,
+          windSpeed: values.windSpeed,
+          windDirection: values.windDirection,
+          humidity: values.humidity,
+          precipitationProbability: values.precipitationProbability,
+          weatherCode: values.weatherCode,
+          visibility: values.visibility,
+          pressureSurfaceLevel: values.pressureSurfaceLevel,
+          description: weatherDescription,
+          icon: weatherIcon,
+        })
+      } catch (err) {
+        console.error("Erro ao buscar dados meteorológicos:", err)
+        setError("Não foi possível carregar os dados meteorológicos")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (location) {
+      fetchWeather()
+    }
+  }, [location])
+
+  // Função para obter descrição do tempo com base no código
+  const getWeatherDescription = (code: number): string => {
+    const weatherCodes: Record<number, string> = {
+      0: "Céu limpo",
+      1000: "Céu limpo",
+      1001: "Céu quase limpo",
+      1100: "Céu quase limpo",
+      1101: "Céu quase limpo",
+      1102: "Céu quase limpo",
+      2000: "Nevoeiro",
+      2100: "Nevoeiro leve",
+      3000: "Vento leve",
+      3001: "Vento",
+      3002: "Vento forte",
+      4000: "Chuviscos",
+      4001: "Chuva",
+      4200: "Chuva leve",
+      4201: "Chuva forte",
+      5000: "Neve",
+      5001: "Neve fraca",
+      5100: "Neve leve",
+      5101: "Neve forte",
+      6000: "Chuva congelada",
+      6200: "Chuva congelada leve",
+      6201: "Chuva congelada forte",
+      7000: "Granizo",
+      7101: "Granizo forte",
+      7102: "Granizo leve",
+      8000: "Trovoada",
+    }
+
+    return weatherCodes[code] || "Desconhecido"
+  }
+
+  // Função para obter ícone do tempo com base no código
+  const getWeatherIcon = (code: number): string => {
+    // Mapeamento simplificado de códigos para ícones
+    if (code === 1000 || code === 0) return "☀️" // Ensolarado
+    if (code >= 1001 && code <= 1102) return "🌤️" // Nublado
+    if (code >= 2000 && code <= 2100) return "🌫️" // Nevoeiro
+    if (code >= 3000 && code <= 3002) return "💨" // Vento
+    if (code >= 4000 && code <= 4201) return "🌧️" // Chuva
+    if (code >= 5000 && code <= 5101) return "❄️" // Neve
+    if (code >= 6000 && code <= 6201) return "🌨️" // Chuva congelada
+    if (code >= 7000 && code <= 7102) return "🌨️" // Granizo
+    if (code === 8000) return "⚡" // Trovoada
+
+    return "❓" // Desconhecido
+  }
+
+  // Função para obter direção do vento em texto
+  const getWindDirection = (degrees: number): string => {
+    const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+    const index = Math.round(degrees / 45) % 8
+    return directions[index]
+  }
+
+  if (!location) return null
+
+  return (
+    <div
+      className={`absolute top-4 right-4 z-[1000] bg-white rounded-lg shadow-lg transition-all duration-300 overflow-hidden ${
+        expanded ? "max-w-xs" : "max-w-[50px]"
+      }`}
+    >
+      <div
+        className="px-3 py-2 bg-blue-600 text-white flex justify-between items-center cursor-pointer"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <h4 className={`text-sm font-semibold flex items-center gap-2 ${expanded ? "" : "sr-only"}`}>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+          </svg>
+          Meteorologia
+        </h4>
+        {!expanded && (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+          </svg>
+        )}
+        {expanded && (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="transition-transform duration-300"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        )}
+      </div>
+
+      {expanded && (
+        <div className="p-4">
+          {loading && (
+            <div className="flex items-center justify-center py-4">
+              <div className="w-6 h-6 border-2 border-t-blue-600 border-blue-200 rounded-full animate-spin"></div>
+              <span className="ml-2 text-sm text-gray-600">Carregando...</span>
+            </div>
+          )}
+
+          {error && <div className="bg-red-50 text-red-700 p-3 rounded-md text-sm">{error}</div>}
+
+          {weather && !loading && !error && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className="text-4xl mr-2">{weather.icon}</span>
+                  <div>
+                    <div className="text-2xl font-bold">{Math.round(weather.temperature)}°C</div>
+                    <div className="text-sm text-gray-600">{weather.description}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="bg-gray-50 p-2 rounded">
+                  <div className="text-gray-500">Vento</div>
+                  <div className="font-medium">
+                    {Math.round(weather.windSpeed)} km/h {getWindDirection(weather.windDirection)}
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-2 rounded">
+                  <div className="text-gray-500">Humidade</div>
+                  <div className="font-medium">{Math.round(weather.humidity)}%</div>
+                </div>
+
+                <div className="bg-gray-50 p-2 rounded">
+                  <div className="text-gray-500">Precipitação</div>
+                  <div className="font-medium">{Math.round(weather.precipitationProbability)}%</div>
+                </div>
+
+                <div className="bg-gray-50 p-2 rounded">
+                  <div className="text-gray-500">Visibilidade</div>
+                  <div className="font-medium">{Math.round(weather.visibility)} km</div>
+                </div>
+              </div>
+
+              <div className="text-xs text-gray-500 text-right">Dados fornecidos por Tomorrow.io</div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -526,6 +777,8 @@ const MapaANAC = () => {
   const [showUserLocation, setShowUserLocation] = useState(false)
   const [mapCenter, setMapCenter] = useState<[number, number]>([39.5, -8.0])
   const [mapZoom, setMapZoom] = useState(7)
+  const [showWeather, setShowWeather] = useState(false)
+  const [weatherLocation, setWeatherLocation] = useState<[number, number] | null>(null)
   const mapRef = useRef<L.Map | null>(null)
 
   // Função para navegar para a página inicial
@@ -691,6 +944,10 @@ const MapaANAC = () => {
           setMapCenter([latitude, longitude])
           setShowUserLocation(true)
           setMapZoom(13) // Zoom in to the user's location
+
+          // Atualizar localização para previsão do tempo
+          setWeatherLocation([latitude, longitude])
+          setShowWeather(true)
         },
         (error) => {
           console.error("Erro ao obter a localização:", error)
@@ -709,6 +966,12 @@ const MapaANAC = () => {
       no_restriction: true,
     })
     setSearchTerm("")
+  }
+
+  // Função para verificar condições meteorológicas em um local específico
+  const checkWeatherAtLocation = (latlng: L.LatLng) => {
+    setWeatherLocation([latlng.lat, latlng.lng])
+    setShowWeather(true)
   }
 
   return (
@@ -810,6 +1073,35 @@ const MapaANAC = () => {
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
                   Minha Localização
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowWeather(!showWeather)
+                    if (!weatherLocation && mapRef.current) {
+                      const center = mapRef.current.getCenter()
+                      setWeatherLocation([center.lat, center.lng])
+                    }
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors shadow-sm ${
+                    showWeather
+                      ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+                  </svg>
+                  Meteorologia
                 </button>
 
                 <button
@@ -973,10 +1265,18 @@ const MapaANAC = () => {
                 ref={(map) => {
                   mapRef.current = map
                 }}
+                eventHandlers={{
+                  click: (e) => {
+                    if (showWeather) {
+                      checkWeatherAtLocation(e.latlng)
+                    }
+                  },
+                }}
               >
                 <ZoomControl position="topright" />
                 <MapBaseControl />
                 <MapLegend />
+                {showWeather && weatherLocation && <WeatherControl location={weatherLocation} />}
 
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -1032,6 +1332,11 @@ const MapaANAC = () => {
                                   .setLatLng(e.latlng)
                                   .setContent(createPopupContent(zone))
                                   .openOn(mapRef.current!)
+
+                                // Se o modo de meteorologia estiver ativo, atualizar a localização
+                                if (showWeather) {
+                                  checkWeatherAtLocation(e.latlng)
+                                }
                               },
                             }}
                           />
@@ -1074,6 +1379,11 @@ const MapaANAC = () => {
                                   .setLatLng(e.latlng)
                                   .setContent(createPopupContent(zone))
                                   .openOn(mapRef.current!)
+
+                                // Se o modo de meteorologia estiver ativo, atualizar a localização
+                                if (showWeather) {
+                                  checkWeatherAtLocation(e.latlng)
+                                }
                               },
                             }}
                           />
