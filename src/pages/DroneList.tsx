@@ -585,12 +585,15 @@ export default function CatalogoDrones() {
                     {/* Imagem e badges */}
                     <div className="relative">
                       <div className="aspect-[4/3] overflow-hidden rounded-t-lg bg-gray-100">
-                        <img
-                          src={drone.imagemUrl || "/placeholder.svg?height=300&width=400"}
-                          alt={drone.nome}
-                          className="w-full h-full object-contain p-4"
-                        />
-                      </div>
+                          <img
+                            src={(drone.imagemUrl?.split(',')[0].trim()) || "/placeholder.svg?height=300&width=400"}
+                            alt={drone.nome}
+                            className="w-full h-full object-contain p-4"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/placeholder.svg?height=300&width=400"
+                            }}
+                          />
+                        </div>
 
                       {/* Badges */}
                       <div className="absolute top-2 left-2 flex flex-col gap-1">
@@ -778,10 +781,14 @@ export default function CatalogoDrones() {
                   {comparacao.map((drone) => (
                     <td key={drone.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <img
-                        src={drone.imagemUrl || "/placeholder.svg?height=100&width=100"}
+                        src={(drone.imagemUrl?.split(',')[0].trim()) || "/placeholder.svg?height=100&width=100"}
                         alt={drone.nome}
                         className="w-24 h-24 object-contain mx-auto"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/placeholder.svg?height=100&width=100"
+                        }}
                       />
+
                     </td>
                   ))}
                 </tr>

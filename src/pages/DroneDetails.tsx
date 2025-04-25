@@ -69,13 +69,13 @@ export default function DroneDetails() {
         // Simulação de múltiplas imagens - em produção, isso viria da API
         // Aqui estamos usando a imagem principal e gerando placeholders adicionais
         if (response.data.imagemUrl) {
-          setImages([
-            response.data.imagemUrl,
-            `/placeholder.svg?height=600&width=800&text=Vista+Lateral`,
-            `/placeholder.svg?height=600&width=800&text=Vista+Superior`,
-            `/placeholder.svg?height=600&width=800&text=Vista+Traseira`,
-          ])
+          const imagens = response.data.imagemUrl
+            .split(',')
+            .map((url: string) => url.trim())
+
+          setImages(imagens)
         }
+
 
         setError(null)
       } catch (err) {

@@ -1002,30 +1002,39 @@ export default function AdminManager() {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="imagemUrl" className="text-gray-700 font-medium">
-                            URL da Imagem <span className="text-red-500">*</span>
+                            URLs das Imagens <span className="text-red-500">*</span>
                           </Label>
-                          <div className="flex gap-2">
-                            <Input
-                              id="imagemUrl"
-                              value={currentDrone.imagemUrl}
-                              onChange={(e) => setCurrentDrone({ ...currentDrone, imagemUrl: e.target.value })}
-                              className="bg-white border-gray-200 focus:border-blue-300"
-                              required
-                            />
-                            {currentDrone.imagemUrl && (
-                              <div className="h-10 w-10 rounded-md border border-gray-200 overflow-hidden flex-shrink-0">
-                                <img
-                                  src={currentDrone.imagemUrl || "/placeholder.svg"}
-                                  alt="Preview"
-                                  className="h-full w-full object-cover"
-                                  onError={(e) => {
-                                    ;(e.target as HTMLImageElement).src = "/placeholder.svg?height=40&width=40"
-                                  }}
-                                />
-                              </div>
-                            )}
-                          </div>
+
+                          <Input
+                            id="imagemUrl"
+                            value={currentDrone.imagemUrl}
+                            onChange={(e) => setCurrentDrone({ ...currentDrone, imagemUrl: e.target.value })}
+                            placeholder="Separe as URLs com vírgulas"
+                            className="bg-white border-gray-200 focus:border-blue-300"
+                            required
+                          />
+
+                          {currentDrone.imagemUrl && (
+                            <div className="flex gap-2 flex-wrap">
+                              {currentDrone.imagemUrl.split(',').map((url, index) => (
+                                <div
+                                  key={index}
+                                  className="h-10 w-10 rounded-md border border-gray-200 overflow-hidden flex-shrink-0"
+                                >
+                                  <img
+                                    src={url.trim() || "/placeholder.svg"}
+                                    alt={`Preview ${index + 1}`}
+                                    className="h-full w-full object-cover"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = "/placeholder.svg?height=40&width=40"
+                                    }}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
+
                       </div>
                     </CardContent>
                   </Card>
