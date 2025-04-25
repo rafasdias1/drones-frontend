@@ -182,11 +182,15 @@ export default function Home() {
                 >
                   <div className="aspect-w-16 aspect-h-9">
                     <img
-                      src={drone.imagemUrl || "/placeholder.svg"}
+                      src={(drone.imagemUrl?.split(',')[0].trim()) || "/placeholder.svg"}
                       alt={drone.nome}
                       className="w-full h-48 object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/placeholder.svg"
+                      }}
                     />
                   </div>
+
                   <div className="p-6">
                     <h3 className="font-semibold text-lg mb-2">{drone.nome}</h3>
                     <p className="text-gray-600 mb-4">{drone.fabricante}</p>
