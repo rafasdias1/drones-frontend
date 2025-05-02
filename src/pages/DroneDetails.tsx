@@ -1,5 +1,7 @@
 import type React from "react"
 
+import { Euro } from "lucide-react";
+
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import {
@@ -166,7 +168,7 @@ export default function DroneDetails() {
               </span>
             </div>
             <div className="bg-white/10 px-3 py-2 rounded-lg flex items-center gap-2 hover:bg-white/20">
-              <DollarSign className="h-5 w-5 text-slate-300" />
+              <Euro className="h-5 w-5 text-slate-300" />
               <span className="text-slate-100 text-sm md:text-base">
                 {priceRange}
               </span>
