@@ -748,7 +748,7 @@ export default function AdminManager() {
                             <SelectContent>
                               <SelectItem value="Agricultura">Agricultura</SelectItem>
                               <SelectItem value="Fotografia Aérea">Fotografia Aérea</SelectItem>
-                              <SelectItem value="Inspeção">Inspeção</SelectItem>
+                              <SelectItem value="Inspeção Industrial">Inspeção Industrial</SelectItem>
                               <SelectItem value="Segurança">Segurança</SelectItem>
                               <SelectItem value="Mapeamento">Mapeamento</SelectItem>
                             </SelectContent>
@@ -1133,7 +1133,7 @@ export default function AdminManager() {
                     <SelectContent>
                       <SelectItem value="Agricultura">Agricultura</SelectItem>
                       <SelectItem value="Fotografia">Fotografia</SelectItem>
-                      <SelectItem value="Inspeção">Inspeção</SelectItem>
+                      <SelectItem value="Inspeção Industrial">Inspeção Industrial</SelectItem>
                       <SelectItem value="Segurança">Segurança</SelectItem>
                       <SelectItem value="Mapeamento">Mapeamento</SelectItem>
                     </SelectContent>
