@@ -304,7 +304,7 @@ const WeatherControl = ({ location }: { location: [number, number] | null }) => 
 
   return (
     <div
-      className={`absolute top-4 right-4 z-[1000] bg-white rounded-lg shadow-lg transition-all duration-300 overflow-hidden ${
+      className={`absolute top-20 right-4 z-[1000] bg-white rounded-lg shadow-lg transition-all duration-300 overflow-hidden ${
         expanded ? "max-w-xs" : "max-w-[50px]"
       }`}
     >

@@ -749,8 +749,11 @@ export default function AdminManager() {
                               <SelectItem value="Agricultura">Agricultura</SelectItem>
                               <SelectItem value="Fotografia Aérea">Fotografia Aérea</SelectItem>
                               <SelectItem value="Inspeção Industrial">Inspeção Industrial</SelectItem>
+                              <SelectItem value="Inspeção Ferroviária">Inspeção Ferroviária</SelectItem>
+                              <SelectItem value="Inspeção Técnica">Inspeção Técnica</SelectItem>
                               <SelectItem value="Segurança">Segurança</SelectItem>
                               <SelectItem value="Mapeamento">Mapeamento</SelectItem>
+                              <SelectItem value="Monitorização Marítima">Monitorização Marítima</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -1134,8 +1137,11 @@ export default function AdminManager() {
                       <SelectItem value="Agricultura">Agricultura</SelectItem>
                       <SelectItem value="Fotografia">Fotografia</SelectItem>
                       <SelectItem value="Inspeção Industrial">Inspeção Industrial</SelectItem>
+                      <SelectItem value="Inspeção Ferroviária">Inspeção Ferroviária</SelectItem>
+                      <SelectItem value="Inspeção Técnica">Inspeção Técnica</SelectItem>
                       <SelectItem value="Segurança">Segurança</SelectItem>
                       <SelectItem value="Mapeamento">Mapeamento</SelectItem>
+                      <SelectItem value="Monitorização Marítima">Monitorização Marítima</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

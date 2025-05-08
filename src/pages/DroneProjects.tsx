@@ -105,7 +105,7 @@ const ExemplosPage = () => {
       case "mapeamento":
         return "🗺️"
       default:
-        return "🚁"
+        return ""
     }
   }
 
